@@ -1,0 +1,33 @@
+services:
+  # Servicio 1: Base de datos SQL Server 2022
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_clientes_container
+    user: root
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Dulc3_2026!
+    ports:
+      - "14333:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql/data
+
+  # Servicio 2: API de Clientes .NET 8
+  clientes-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clientes_api_container
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=Clientes;User Id=sa;Password=Dulc3_2026!;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+
+# Volumen persistente para guardar los datos de las tablas
+volumes:
+  sqlserver_data:

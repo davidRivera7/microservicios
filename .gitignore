@@ -1,0 +1,20 @@
+# Android / Gradle
+.gradle/
+build/
+app/build/
+*.apk
+.idea/
+*.iml
+
+# Go
+/servicio-pedidos/servicio-pedidos
+*.exe
+
+# Java / Spring Boot
+target/
+*.class
+*.jar
+
+# Environment & Logs
+*.log
+.env

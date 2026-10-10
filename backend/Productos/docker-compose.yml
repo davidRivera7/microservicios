@@ -1,0 +1,29 @@
+services:
+
+  db-productos:
+    image: mysql:8.0
+    container_name: mysql_productos
+    restart: always
+    environment:
+      MYSQL_DATABASE: bd_productos
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  api-productos:
+    build: .
+    container_name: api_productos
+    restart: on-failure
+    depends_on:
+      - db-productos
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_URL=jdbc:mysql://db-productos:3306/bd_productos?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - DB_USER=root
+      - DB_PASS=root
+
+volumes:
+  mysql_data:

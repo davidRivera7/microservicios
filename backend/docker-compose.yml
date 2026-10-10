@@ -1,0 +1,127 @@
+services:
+  # --- 1. MICROSERVICIO DE CLIENTES (.NET 8 + SQL Server) ---
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_clientes_container
+    user: root
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Dulc3_2026!
+    ports:
+      - "14333:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Dulc3_2026!' -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  servicio-clientes:
+    build:
+      context: ./apiclientes
+      dockerfile: Dockerfile
+    container_name: clientes_api_container
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__ConexionSQL=Server=sqlserver,1433;Database=CLIENTES;User Id=sa;Password=Dulc3_2026!;TrustServerCertificate=True;
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  # --- 2. MICROSERVICIO DE PRODUCTOS (Java/Gradle + MySQL) ---
+  db-productos:
+    image: mysql:8.0
+    container_name: mysql_productos
+    restart: always
+    environment:
+      MYSQL_DATABASE: bd_productos
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  servicio-productos:
+    build:
+      context: ./Productos
+      dockerfile: Dockerfile
+    container_name: api_productos
+    restart: on-failure
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_URL=jdbc:mysql://db-productos:3306/bd_productos?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - DB_USER=root
+      - DB_PASS=root
+    depends_on:
+      - db-productos
+
+  # --- 3. MICROSERVICIO DE PEDIDOS (Go + PostgreSQL + RabbitMQ) ---
+  db-pedidos:
+    image: postgres:15-alpine
+    container_name: db-pedidos
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: pedidos_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_pedidos_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # Puerto AMQP
+      - "15672:15672" # Dashboard Web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  servicio-pedidos:
+    build: ./servicio-pedidos
+    image: pedidos-service
+    container_name: servicio-pedidos
+    ports:
+      - "8082:8082"
+    environment:
+      - DB_HOST=db-pedidos
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password123
+      - DB_NAME=pedidos_db
+      # Comunicación directa interna entre contenedores
+      - CLIENTES_SERVICE_URL=http://servicio-clientes:8083/api
+      - PRODUCTOS_SERVICE_URL=http://servicio-productos:8081/api
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+      - db-pedidos
+      - servicio-clientes
+      - servicio-productos
+
+  # --- 4. API GATEWAY (Nginx - Puerto 8000) ---
+  api-gateway:
+    image: nginx:alpine
+    container_name: api_gateway
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - servicio-clientes
+      - servicio-productos
+      - servicio-pedidos
+
+volumes:
+  sqlserver_data:
+  mysql_data:
+  postgres_pedidos_data:

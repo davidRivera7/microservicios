@@ -1,0 +1,14 @@
+# Ejecutables de Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+
+# Entorno y variables sensibles
+.env
+
+# IDE
+.vscode/
+.idea/
