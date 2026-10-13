@@ -6,6 +6,7 @@ import com.google.gson.annotations.SerializedName
 data class ClienteRequest(
     @SerializedName("nombre") val nombre: String,
     @SerializedName("email") val email: String,
+    @SerializedName("contrasena") val contrasena: String,
     @SerializedName("direccion") val direccion: String,
     @SerializedName("status") val status: Int = 1
 )

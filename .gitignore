@@ -18,3 +18,9 @@ target/
 # Environment & Logs
 *.log
 .env
+
+# .NET 
+.vs/
+bin/
+obj/
+*.user

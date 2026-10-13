@@ -62,24 +62,35 @@ public class ClientesController : ControllerBase
         repositorio.Actualizar(id, cliente);
         return Ok(new { mensaje = "Cliente actualizado correctamente" });
     }
+    /// <summary>
+    /// Da de baja/elimina logicamente a un cliente por su id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
 
-    [HttpDelete("CambiarStatus/{id}/{status}")]
-    public IActionResult Eliminar(int id,int status)
+    [HttpDelete("DarDeBaja/{id}")]
+    public IActionResult Eliminar(int id)
     {
         var clienteExistente = repositorio.cargarClientePorID(id);
         if (clienteExistente == null) return NotFound();
-        repositorio.CambiarStatus(id, status);
+        repositorio.DarDeBaja(id);
 
         return NoContent();
     }
+    /// <summary>
+    /// Autentica a los cliente para darle acceso al sistema , con base a correo y contraseña.
+    /// </summary>
+    /// <param name="correo"></param>
+    /// <param name="pass"></param>
+    /// <returns></returns>
 
-    [HttpGet("ObtenerPorCorreo/{correo}")]
-    public IActionResult ObtenerPorCorreo(string correo)
+    [HttpPost("Autenticar/{correo}/{pass}")]
+    public IActionResult ObtenerPorCorreo(string correo,string pass)
     {
-        var cliente = repositorio.ObtenerPorCorreo(correo);
+        var cliente = repositorio.Autenticar(correo,pass);
         if (cliente == null)
         {
-            return NotFound(new { mensaje = "El correo no existe en la base de datos." });
+            return NotFound(new { mensaje = "No existe el usuario con los datos ingresados." });
         }
         return Ok(cliente);
     }

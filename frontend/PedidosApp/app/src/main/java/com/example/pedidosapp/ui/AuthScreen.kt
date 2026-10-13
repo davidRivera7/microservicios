@@ -22,6 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 
 // Importa tus modelos y tu cliente de red
 import com.example.pedidosapp.model.ClienteRequest
@@ -38,6 +41,7 @@ fun AuthScreen(
     var isRegisterMode by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var password by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -77,6 +81,21 @@ fun AuthScreen(
             label = { Text("Correo electrónico") },
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (errorMessage.isNotEmpty()) {
+            Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Contraseña") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         if (errorMessage.isNotEmpty()) {
@@ -92,11 +111,11 @@ fun AuthScreen(
                     try {
                         if (isRegisterMode) {
                             val resReg = RetrofitClient.instance.registrarCliente(
-                                ClienteRequest(nombre, email, direccion)
+                                ClienteRequest(nombre, email,password, direccion)
                             )
                             if (resReg.isSuccessful) {
                                 // Al registrar correctamente, consultamos sus datos para iniciar sesión
-                                val resLogin = RetrofitClient.instance.loginCliente(email)
+                                val resLogin = RetrofitClient.instance.loginCliente(email,password)
                                 if (resLogin.isSuccessful && resLogin.body() != null) {
                                     onLoginSuccess(resLogin.body()!!)
                                 } else {
@@ -106,7 +125,7 @@ fun AuthScreen(
                                 errorMessage = "Error al registrar cliente (Código ${resReg.code()})."
                             }
                         } else {
-                            val res = RetrofitClient.instance.loginCliente(email.trim())
+                            val res = RetrofitClient.instance.loginCliente(email.trim(),password.trim())
                             if (res.isSuccessful && res.body() != null) {
                                 onLoginSuccess(res.body()!!)
                             } else if (res.code() == 404) {

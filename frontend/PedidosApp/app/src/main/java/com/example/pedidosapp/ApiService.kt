@@ -11,15 +11,27 @@ import retrofit2.http.*
 interface ApiService {
 
     // --- CLIENTES ---
-    @GET("api/Clientes/ObtenerPorCorreo/{correo}")
+    @POST("api/Clientes/Autenticar/{correo}/{pass}")
     suspend fun loginCliente(
-        @Path("correo") correo: String
+        @Path("correo") correo: String,
+        @Path("pass") pass:String
     ): Response<ClienteResponse>
 
     @POST("api/Clientes/Insertar")
     suspend fun registrarCliente(
         @Body cliente: ClienteRequest
     ): Response<Map<String, String>>
+
+    @PUT("api/Clientes/Actualizar/{id}")
+    suspend fun modificarCliente(
+        @Path("id") id: Long,
+        @Body cliente: ClienteRequest
+    ): Response<Map<String, String>>
+
+    @DELETE("api/Clientes/DarDeBaja/{id}")
+    suspend fun desactivarCuenta(
+        @Path("id") id: Long
+    ): Response<Unit>
 
     // --- PRODUCTOS ---
     @GET("api/productos")
