@@ -34,7 +34,7 @@ services:
       sqlserver:
         condition: service_healthy
 
-  # --- 2. MICROSERVICIO DE PRODUCTOS (Java/Gradle + MySQL) ---
+  # --- 2. MICROSERVICIO  DE PRODUCTOS (Java/Gradle + MySQL) ---
   db-productos:
     image: mysql:8.0
     container_name: mysql_productos

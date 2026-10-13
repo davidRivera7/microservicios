@@ -40,6 +40,7 @@ import com.example.pedidosapp.RetrofitClient
 fun ProductosScreen(
     cliente: ClienteResponse,
     onVerMisPedidosClick: () -> Unit,
+    onPerfilClick: () -> Unit,
     onCerrarSesionClick: () -> Unit
 ) {
     var productos by remember { mutableStateOf<List<Producto>>(emptyList()) }
@@ -72,19 +73,43 @@ fun ProductosScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(text = "Hola,", style = MaterialTheme.typography.bodyMedium)
                 Text(text = cliente.nombre, style = MaterialTheme.typography.titleLarge)
             }
+            //new
+            OutlinedButton(onClick = onCerrarSesionClick) {
+                Text("Salir")
+            }
 
-            Row {
-                OutlinedButton(onClick = onCerrarSesionClick) {
-                    Text("Salir")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = onVerMisPedidosClick) {
-                    Text("Mis Pedidos")
-                }
+//            Row {
+//                OutlinedButton(onClick = onCerrarSesionClick) {
+//                    Text("Salir")
+//                }
+//                Spacer(modifier = Modifier.width(8.dp))
+//                Button(onClick = onVerMisPedidosClick) {
+//                    Text("Mis Pedidos")
+//                }
+//            }
+        }
+
+        // Fila de navegación (Mi Perfil / Mis Pedidos)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            OutlinedButton(
+                onClick = onPerfilClick,
+                modifier = Modifier.weight(1f) // weight(1f) hace que ocupen la mitad de la pantalla
+            ) {
+                Text("Mi Perfil")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = onVerMisPedidosClick,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Mis Pedidos")
             }
         }
 

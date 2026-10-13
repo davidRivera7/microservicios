@@ -1,4 +1,4 @@
-package com.example.pedidosapp
+    package com.example.pedidosapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,6 +12,7 @@ import com.example.pedidosapp.model.ClienteResponse
 import com.example.pedidosapp.ui.AuthScreen
 import com.example.pedidosapp.ui.MisPedidosScreen
 import com.example.pedidosapp.ui.ProductosScreen
+import  com.example.pedidosapp.ui.PerfilScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +55,7 @@ fun AppPedidosNavegacion() {
                     onVerMisPedidosClick = {
                         pantallaActual = Pantalla.MIS_PEDIDOS
                     },
+                    onPerfilClick = { pantallaActual = Pantalla.PERFIL  },
                     onCerrarSesionClick = {
                         clienteAutenticado = null
                         pantallaActual = Pantalla.AUTH
@@ -72,11 +74,31 @@ fun AppPedidosNavegacion() {
                 )
             }
         }
+
+        Pantalla.PERFIL -> {
+            clienteAutenticado?.let { cliente ->
+                PerfilScreen(
+                    clienteActual = cliente,
+                    onVolverClick = {
+                        pantallaActual = Pantalla.PRODUCTOS
+                    },
+                    onCuentaModificada = { clienteActualizado ->
+                        clienteAutenticado = clienteActualizado
+                    },
+                    onCuentaEliminada = {
+                        clienteAutenticado = null
+                        pantallaActual = Pantalla.AUTH
+                    }
+                )
+            }
+        }
     }
 }
 
 enum class Pantalla {
     AUTH,          // Login y Registro
     PRODUCTOS,     // Catálogo y creación de pedido
-    MIS_PEDIDOS    // Historial de pedidos
+    MIS_PEDIDOS,    // Historial de pedidos
+
+    PERFIL // Modificacion de perfil
 }
