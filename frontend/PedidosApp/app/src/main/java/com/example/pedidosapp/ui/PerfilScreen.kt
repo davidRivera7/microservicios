@@ -12,11 +12,13 @@ import com.example.pedidosapp.model.ClienteRequest
 import com.example.pedidosapp.model.ClienteResponse
 import com.example.pedidosapp.RetrofitClient
 
+
 @Composable
 fun PerfilScreen(
     clienteActual: ClienteResponse,
     onVolverClick: () -> Unit,
     onCuentaModificada: (ClienteResponse) -> Unit, // Actualiza el estado global de la app
+    onGuardarExitoso: (String) -> Unit, // manda mensaje de exito
     onCuentaEliminada: () -> Unit // Cierra sesión y manda al AuthScreen
 ) {
     // Estas son las variables de las cajas de texto, pre-llenadas con la info actual
@@ -27,8 +29,14 @@ fun PerfilScreen(
     var isLoading by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf("") }
 
+
     // Controla si se muestra el cuadro de advertencia antes de eliminar
     var mostrarDialogoEliminar by remember { mutableStateOf(false) }
+    var mostrarDialogoPassword by remember { mutableStateOf(false) }
+
+    // Estados para el cambio de contraseña
+    var passActual by remember { mutableStateOf("") }
+    var nuevaPass by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -77,16 +85,6 @@ fun PerfilScreen(
             readOnly = true,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // CAJA DE TEXTO 3: Contraseña
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Nueva Contraseña (Opcional)") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
         Spacer(modifier = Modifier.height(24.dp))
 
         if (mensaje.isNotEmpty()) {
@@ -104,20 +102,20 @@ fun PerfilScreen(
                         val request = ClienteRequest(
                             nombre = nombre,
                             email = clienteActual.email, // El correo no se cambia
-                            contrasena = password,
+                            contrasena = "",  // no importa porque la api la ignora
                             direccion = direccion,
                             status = 1
                         )
 
                         val response = RetrofitClient.instance.modificarCliente(clienteActual.id, request)
                         if (response.isSuccessful) {
-                            mensaje = "Datos actualizados correctamente."
                             // Actualizamos la información en el resto de la app
                             val clienteActualizado = clienteActual.copy(
                                 nombre = nombre,
                                 direccion = direccion
                             )
                             onCuentaModificada(clienteActualizado)
+                            onGuardarExitoso("Datos actualizados correctamente.")
                         } else {
                             mensaje = "Error al actualizar los datos."
                         }
@@ -144,6 +142,81 @@ fun PerfilScreen(
         ) {
             Text("Eliminar Cuenta")
         }
+    }
+
+    // CUADRO DE DIÁLOGO: Cambio de Contraseña
+    if (mostrarDialogoPassword) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoPassword = false },
+            title = { Text("Cambiar Contraseña") },
+            text = {
+                Column {
+                    Text("Ingresa tu contraseña actual por seguridad y la nueva que deseas asignar.", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = passActual,
+                        onValueChange = { passActual = it },
+                        label = { Text("Contraseña actual") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = nuevaPass,
+                        onValueChange = { nuevaPass = it },
+                        label = { Text("Nueva contraseña") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !isLoading && passActual.isNotBlank() && nuevaPass.isNotBlank(),
+                    onClick = {
+                        coroutineScope.launch {
+                            isLoading = true
+                            try {
+                                // Enviamos la petición al nuevo endpoint
+                                val request = ClienteRequest(
+                                    nombre = nombre,
+                                    email = clienteActual.email,
+                                    contrasena = nuevaPass, // Esta es la que se encriptará
+                                    direccion = direccion,
+                                    status = 1
+                                )
+                                val response = RetrofitClient.instance.actualizarContrasena(
+                                    id = clienteActual.id,
+                                    passActual = passActual, // Esta valida contra la BD
+                                    cliente = request
+                                )
+
+                                if (response.isSuccessful) {
+                                    mensaje = "Contraseña actualizada exitosamente."
+                                    mostrarDialogoPassword = false
+                                } else if (response.code() == 400) {
+                                    mensaje = "La contraseña actual es incorrecta."
+                                    mostrarDialogoPassword = false
+                                } else {
+                                    mensaje = "Error al actualizar contraseña."
+                                }
+                            } catch (e: Exception) {
+                                mensaje = "Error de conexión."
+                            } finally {
+                                isLoading = false
+                            }
+                        }
+                    }
+                ) {
+                    Text("Actualizar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoPassword = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
     // CUADRO DE DIÁLOGO: Confirmación de Soft Delete

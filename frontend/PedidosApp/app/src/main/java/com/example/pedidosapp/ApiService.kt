@@ -28,6 +28,13 @@ interface ApiService {
         @Body cliente: ClienteRequest
     ): Response<Map<String, String>>
 
+    @PUT("api/Clientes/ActualizarContrasena/{id}/{passActual}")
+    suspend fun actualizarContrasena(
+        @Path("id") id: Long,
+        @Path("passActual") passActual: String,
+        @Body cliente: ClienteRequest
+    ): Response<Map<String, String>>
+
     @DELETE("api/Clientes/DarDeBaja/{id}")
     suspend fun desactivarCuenta(
         @Path("id") id: Long
@@ -47,4 +54,6 @@ interface ApiService {
     suspend fun obtenerPedidosPorCliente(
         @Path("clienteId") clienteId: Long
     ): Response<List<DetallePedidoResponse>>
+
+
 }

@@ -13,6 +13,9 @@ import com.example.pedidosapp.ui.AuthScreen
 import com.example.pedidosapp.ui.MisPedidosScreen
 import com.example.pedidosapp.ui.ProductosScreen
 import  com.example.pedidosapp.ui.PerfilScreen
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,7 +37,8 @@ class MainActivity : ComponentActivity() {
 fun AppPedidosNavegacion() {
     // Estado de la pantalla actual (Comienza en Auth / Login)
     var pantallaActual by remember { mutableStateOf(Pantalla.AUTH) }
-
+    var mensajeDialogo by remember { mutableStateOf("") }
+    var mostrarDialogo by remember { mutableStateOf(false) }
     // Estado para guardar la información del cliente una vez autenticado
     var clienteAutenticado by remember { mutableStateOf<ClienteResponse?>(null) }
 
@@ -88,12 +92,31 @@ fun AppPedidosNavegacion() {
                     onCuentaEliminada = {
                         clienteAutenticado = null
                         pantallaActual = Pantalla.AUTH
-                    }
+                    },
+                    onGuardarExitoso = {
+                            mensaje ->
+                        mensajeDialogo = mensaje
+                        mostrarDialogo = true
+                        pantallaActual  = Pantalla.PRODUCTOS},
                 )
             }
         }
     }
+    if (mostrarDialogo) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogo = false },
+            title = { Text("Aviso") },
+            text = { Text(mensajeDialogo) },
+            confirmButton = {
+                TextButton(onClick = { mostrarDialogo = false }) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
 }
+
+
 
 enum class Pantalla {
     AUTH,          // Login y Registro

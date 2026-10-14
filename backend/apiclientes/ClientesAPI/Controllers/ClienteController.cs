@@ -62,6 +62,29 @@ public class ClientesController : ControllerBase
         repositorio.Actualizar(id, cliente);
         return Ok(new { mensaje = "Cliente actualizado correctamente" });
     }
+
+    /// <summary>
+    /// Cambia la contraseña del cliente validando su contraseña actual.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="passActual"></param>
+    /// <param name="cliente"></param>
+    /// <returns></returns>
+    [HttpPut("ActualizarContrasena/{id}/{passActual}")]
+    public IActionResult ActualizarContrasena(int id, string passActual, [FromBody] Cliente cliente)
+    {
+        // El objeto 'cliente' trae la nueva contraseña en su propiedad Contrasena
+        var exito = repositorio.ActualizarContrasena(id, passActual, cliente);
+
+        if (!exito)
+        {
+            return BadRequest(new { mensaje = "La contraseña actual es incorrecta o el usuario no existe." });
+        }
+
+        return Ok(new { mensaje = "Contraseña actualizada correctamente." });
+    }
+
+
     /// <summary>
     /// Da de baja/elimina logicamente a un cliente por su id
     /// </summary>

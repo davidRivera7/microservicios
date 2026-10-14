@@ -40,9 +40,32 @@ namespace ClientesAPI.Repository
         {
             using var connection = new SqlConnection(conexion);
             cliente.Contrasena = _encriptada.HashPassword(cliente, cliente.Contrasena);
-            var sql = "UPDATE Clientes SET Nombre = @Nombre,Contrasena = @Contrasena, Direccion = @Direccion WHERE Id = @Id";
-            connection.Execute(sql, new { Nombre =cliente.Nombre,Contrasena = cliente.Contrasena, Direccion =  cliente.Direccion, Id = id });
+            var sql = "UPDATE Clientes SET Nombre = @Nombre, Direccion = @Direccion WHERE Id = @Id";
+            connection.Execute(sql, new { Nombre =cliente.Nombre, Direccion =  cliente.Direccion, Id = id });
         }
+
+
+        public bool ActualizarContrasena(int id, string contrasenaActual, Cliente cliente)
+        {
+            using var connection = new SqlConnection(conexion);
+            var sqlSelect = "SELECT Id, Contrasena FROM Clientes WHERE Id = @Id";
+            var clienteBd = connection.QueryFirstOrDefault<Cliente>(sqlSelect, new { Id = id });
+
+            if (clienteBd == null) return false;
+            var resultadoVerificacion = _encriptada.VerifyHashedPassword(clienteBd, clienteBd.Contrasena, contrasenaActual);
+
+            if (resultadoVerificacion == PasswordVerificationResult.Failed)
+            {
+                return false; 
+            }
+
+            cliente.Contrasena = _encriptada.HashPassword(cliente, cliente.Contrasena);
+            var sqlUpdate = "UPDATE Clientes SET Contrasena = @Contrasena WHERE Id = @Id";
+            var filasAfectadas = connection.Execute(sqlUpdate, new { Contrasena = cliente.Contrasena, Id = id });
+
+            return filasAfectadas > 0;
+        }
+
 
         public void DarDeBaja(int id)
         {
@@ -53,7 +76,7 @@ namespace ClientesAPI.Repository
 
         public Cliente? Autenticar(string correo,string pass) {
             using var connection = new SqlConnection(conexion);
-            var sql = "SELECT Id, Nombre, Email,Contrasena, Direccion FROM Clientes WHERE Email = @Correo";
+            var sql = "SELECT Id, Nombre, Email,Contrasena, Direccion FROM Clientes WHERE Email = @Correo AND Status = 1";
             var cliente = connection.QueryFirstOrDefault<Cliente>(sql, new { Correo = correo });
             if (cliente == null) return null;
 
