@@ -134,6 +134,19 @@ fun PerfilScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        OutlinedButton(
+            onClick = {
+                passActual = ""
+                nuevaPass = ""
+                mostrarDialogoPassword = true
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cambiar Contraseña")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // BOTÓN: Eliminar Cuenta
         OutlinedButton(
             onClick = { mostrarDialogoEliminar = true },

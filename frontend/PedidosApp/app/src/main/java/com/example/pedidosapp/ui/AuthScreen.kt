@@ -83,11 +83,6 @@ fun AuthScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (errorMessage.isNotEmpty()) {
-            Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -129,7 +124,7 @@ fun AuthScreen(
                             if (res.isSuccessful && res.body() != null) {
                                 onLoginSuccess(res.body()!!)
                             } else if (res.code() == 404) {
-                                errorMessage = "El correo no existe en la base de datos."
+                                errorMessage = "No existe el usuario con los datos ingresados."
                             } else {
                                 errorMessage = "Error de servidor (Código HTTP ${res.code()})."
                             }
