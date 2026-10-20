@@ -9,7 +9,7 @@ import (
     "log"
 
     "servicio-pedidos/db"     
-    "servicio-pedidos/messaging" 
+	"servicio-pedidos/messaging" 
     "servicio-pedidos/models"
 )
 
@@ -110,19 +110,19 @@ func CrearPedidoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 5. Emitir Evento Asíncrono hacia RabbitMQ
-	go func() {
-		evento := messaging.EventoPedidoCreado{
-			PedidoID:      pedido.ID,
-			ClienteID:     req.ClienteID,
-			EmailCliente:  cliente.Email,
-			NombreCliente: cliente.Nombre,
-			ProductoID:    req.ProductoID,
-			Cantidad:      req.Cantidad,
-			Total:         precioTotal,
-		}
-		messaging.PublicarPedidoCreado(evento)
-	}()
+	// // 5. Emitir Evento Asíncrono hacia RabbitMQ se quita por que va por capas
+	// go func() {
+	// 	evento := messaging.EventoPedidoCreado{
+	// 		PedidoID:      pedido.ID,
+	// 		ClienteID:     req.ClienteID,
+	// 		EmailCliente:  cliente.Email,
+	// 		NombreCliente: cliente.Nombre,
+	// 		ProductoID:    req.ProductoID,
+	// 		Cantidad:      req.Cantidad,
+	// 		Total:         precioTotal,
+	// 	}
+	// 	messaging.PublicarPedidoCreado(evento)
+	// }()
 
 	// 6. Responder inmediatamente al cliente con el pedido creado
 	w.Header().Set("Content-Type", "application/json")
@@ -136,34 +136,44 @@ func ObtenerPedidosHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Consultar todos los pedidos desde PostgreSQL
+    // Unimos la tabla pedidos con la tabla clientes
     querySelect := `
-        SELECT id, cliente_id, nombre_cliente, producto_id, nombre_prod, cantidad, precio_total, fecha 
-        FROM pedidos
+        SELECT 
+            p.id, 
+            p.cliente_id, 
+            p.nombre_cliente, 
+            COALESCE(c.email, '') AS email_cliente, 
+            p.producto_id, 
+            p.nombre_prod, 
+            p.cantidad, 
+            p.precio_total
+        FROM pedidos p
+        LEFT JOIN clientes c ON p.cliente_id = c.id
     `
     rows, err := db.DB.Query(querySelect)
     if err != nil {
-        log.Println("Error SQL en ObtenerPedidosHandler:", err) 
-        http.Error(w, "Error al consultar los pedidos de la base de datos", http.StatusInternalServerError)
-        return        
+        log.Println("Error SQL en ObtenerPedidosHandler:", err)
+        http.Error(w, "Error al consultar pedidos", http.StatusInternalServerError)
+        return
     }
     defer rows.Close()
 
-    pedidosList := make([]models.Pedido, 0)
+    pedidosList := make([]models.PedidoNotificacion, 0)
 
     for rows.Next() {
-        var p models.Pedido
+        var p models.PedidoNotificacion
         err := rows.Scan(
-            &p.ID, 
-            &p.ClienteID, 
-            &p.NombreCliente, 
-            &p.ProductoID, 
-            &p.NombreProd, 
-            &p.Cantidad, 
-            &p.PrecioTotal, 
-            &p.Fecha,
+            &p.ID,
+            &p.ClienteID,
+            &p.NombreCliente,
+            &p.EmailCliente,
+            &p.ProductoID,
+            &p.NombreProd,
+            &p.Cantidad,
+            &p.PrecioTotal,
         )
         if err != nil {
+            log.Println("Error al escanear fila:", err)
             continue
         }
         pedidosList = append(pedidosList, p)
@@ -232,3 +242,94 @@ func ObtenerPedidosPorClienteHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(pedidosList)
 }
+
+//Metodos agregados Carlos Cuellar
+
+// 1.- Eliminar el pedido
+func EliminarPedidoPorID(id int) error {
+    query := `DELETE FROM pedidos WHERE id = $1`
+    _, err := db.DB.Exec(query, id)
+    return err
+}
+
+
+// 2.- En tu archivo donde están los handlers 
+func ProcesarPedidoRabbitHandler(w http.ResponseWriter, r *http.Request) {
+    // 1. Aceptar peticiones DELETE (o POST según tu preferencia)
+    if r.Method != http.MethodDelete && r.Method != http.MethodPost {
+        http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+        return
+    }
+
+    // 2. Decodificar el JSON recibido desde el JavaScript
+    var evento messaging.EventoPedidoCreado
+    err := json.NewDecoder(r.Body).Decode(&evento)
+    if err != nil {
+        http.Error(w, "Estructura de JSON inválida", http.StatusBadRequest)
+        return
+    }
+
+    // 3. Publicar en RabbitMQ usando publish.go
+    errRabbit := messaging.PublicarPedidoCreado(evento)
+    if errRabbit != nil {
+        log.Printf("Error publicando en RabbitMQ: %v\n", errRabbit)
+        http.Error(w, "Error al enviar mensaje a RabbitMQ", http.StatusInternalServerError)
+        return
+    }
+
+    // 4. Eliminar de PostgreSQL usando la función que ya tienes
+    errDB := EliminarPedidoPorID(evento.PedidoID)
+    if errDB != nil {
+        log.Printf("Error al borrar de BD: %v\n", errDB)
+        http.Error(w, "Enviado a RabbitMQ pero falló al eliminar de la BD", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte(`{"mensaje": "Pedido atendido, enviado a RabbitMQ y borrado de la BD"}`))
+}
+
+
+// METODO ELIMINADO DE DAVID
+// func ObtenerPedidosHandler(w http.ResponseWriter, r *http.Request) {
+//     if r.Method != http.MethodGet {
+//         http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+//         return
+//     }
+
+//     // Consultar todos los pedidos desde PostgreSQL
+//     querySelect := `
+//         SELECT id, cliente_id, nombre_cliente, producto_id, nombre_prod, cantidad, precio_total, fecha 
+//         FROM pedidos
+//     `
+//     rows, err := db.DB.Query(querySelect)
+//     if err != nil {
+//         log.Println("Error SQL en ObtenerPedidosHandler:", err) 
+//         http.Error(w, "Error al consultar los pedidos de la base de datos", http.StatusInternalServerError)
+//         return        
+//     }
+//     defer rows.Close()
+
+//     pedidosList := make([]models.Pedido, 0)
+
+//     for rows.Next() {
+//         var p models.Pedido
+//         err := rows.Scan(
+//             &p.ID, 
+//             &p.ClienteID, 
+//             &p.NombreCliente, 
+//             &p.ProductoID, 
+//             &p.NombreProd, 
+//             &p.Cantidad, 
+//             &p.PrecioTotal, 
+//             &p.Fecha,
+//         )
+//         if err != nil {
+//             continue
+//         }
+//         pedidosList = append(pedidosList, p)
+//     }
+
+//     w.Header().Set("Content-Type", "application/json")
+//     json.NewEncoder(w).Encode(pedidosList)
+// }

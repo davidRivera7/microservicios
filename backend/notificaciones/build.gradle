@@ -1,0 +1,68 @@
+// ==============================================================================
+// PLUGINS: Herramientas para compilar Java y habilitar las capacidades de Spring Boot
+// ==============================================================================
+plugins {
+    // Habilita las tareas estándar de compilación y empaquetado para Java
+    id 'java'
+    
+    // Proporciona tareas para empaquetar ejecutables .jar y arrancar Spring Boot
+    id 'org.springframework.boot' version '3.4.1'
+    
+    // Gestiona automáticamente las versiones compatibles de las dependencias de Spring
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+// ==============================================================================
+// METADATOS DEL PROYECTO
+// ==============================================================================
+// Dominio u organización a la que pertenece el microservicio
+group = 'com.sistema'
+
+// Versión del software (SNAPSHOT indica que se encuentra en fase de desarrollo)
+version = '0.0.1-SNAPSHOT'
+
+// ==============================================================================
+// CONFIGURACIÓN DE JAVA
+// ==============================================================================
+java {
+    // Especifica que el código fuente aceptará sintaxis y características de Java 17
+    sourceCompatibility = JavaVersion.VERSION_17
+    
+    // Garantiza que los archivos compilados (.class) sean ejecutables en la JVM 17
+    // Esto permite usar Java 18 o mas para compilar hacia Java 17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+// ==============================================================================
+// REPOSITORIOS
+// ==============================================================================
+repositories {
+    // Servidor remoto oficial desde donde Gradle descargará las librerías necesarias
+    mavenCentral()
+}
+
+// ==============================================================================
+// DEPENDENCIAS (LIBRERÍAS)
+// ==============================================================================
+dependencies {
+    
+    // Habilita el servidor web embebido (Tomcat), endpoints REST HTTP y soporte para JSON
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Integración con RabbitMQ (protocolo AMQP) para envío y recepción de mensajes
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
+    // Starter de Spring Boot para la gestión y envío de correos electrónicos vía SMTP (JavaMailSender)
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // Librerías requeridas para ejecutar pruebas unitarias e integración (JUnit 5, AssertJ, etc.)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// ==============================================================================
+// TAREAS DE PRUEBA
+// ==============================================================================
+tasks.named('test') {
+    // Configura Gradle para ejecutar las pruebas utilizando la plataforma JUnit 5
+    useJUnitPlatform()
+}

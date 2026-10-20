@@ -12,6 +12,10 @@ import (
 func main() {
 	db.ConectarBD()
 
+	// Servir archivos estáticos (tu página web HTML/CSS/JS)
+    fs := http.FileServer(http.Dir("/frontend/PedidosAtendidos"))
+    http.Handle("/", fs)
+
 	// Handler para /pedidos (POST para crear, GET para listar todos)
 	http.HandleFunc("/pedidos", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -19,6 +23,8 @@ func main() {
 			handlers.CrearPedidoHandler(w, r)
 		case http.MethodGet:
 			handlers.ObtenerPedidosHandler(w, r)
+		case http.MethodDelete:
+        	handlers.ProcesarPedidoRabbitHandler(w, r)
 		default:
 			http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 		}

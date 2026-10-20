@@ -1,0 +1,54 @@
+/* Tabla de Pedidos */
+.tabla-pedidos {
+    width: 100%;
+    max-width: 1000px;
+    margin: 20px auto;
+    border-collapse: collapse;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tabla-pedidos thead {
+    background-color: #2c3e50;
+    color: #ffffff;
+    text-align: left;
+}
+
+.tabla-pedidos th,
+.tabla-pedidos td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #dddddd;
+}
+
+.tabla-pedidos tbody tr:nth-of-type(even) {
+    background-color: #f9f9f9;
+}
+
+.tabla-pedidos tbody tr:hover {
+    background-color: #f1f1f1;
+    transition: background-color 0.2s ease;
+}
+
+/* Botón Atender Pedido */
+.btn-atender {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
+}
+
+.btn-atender:hover {
+    background-color: #219150;
+}
+
+.btn-atender:active {
+    transform: scale(0.96);
+}

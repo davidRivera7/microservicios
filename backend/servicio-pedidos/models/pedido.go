@@ -35,3 +35,15 @@ type Pedido struct {
 	PrecioTotal   float64   `json:"precio_total"`
 	Fecha         time.Time `json:"fecha"`
 }
+
+//Es la estructura que valida para rabbit
+type PedidoNotificacion struct {
+	ID            int     `json:"id"`
+	ClienteID     int     `json:"cliente_id"`
+	NombreCliente string  `json:"nombre_cliente"`
+	EmailCliente  string  `json:"email_cliente"`
+	ProductoID    int     `json:"producto_id"`
+	NombreProd    string  `json:"nombre_prod,omitempty"`
+	Cantidad      int     `json:"cantidad"`
+	PrecioTotal   float64 `json:"precio_total"`
+}
