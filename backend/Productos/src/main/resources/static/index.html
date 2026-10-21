@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background-color: #f9f9f9; padding-top: 45px; padding-bottom: 45px; font-size: 18px; }
+        .franja { position: fixed; left: 0; width: 100%; height: 50px; background-color: gray; z-index: 1000; }
+
+        .franja-superior { top: 0; }
+        .franja-inferior { bottom: 0; }
+
+        #login-screen, #app-screen { display: none; }
+        #login-screen.active, #app-screen.active { display: block; }
+        .login-container { max-width: 300px; margin: 100px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        .login-container input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        .login-container button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+
+        .header { padding: 20px; }
+        .btn-pastel { background-color: #ffb3ba; color: #333; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: filter 0.2s; margin-top: 10px; }
+        .btn-pastel:hover { filter: brightness(0.85); }
+
+        .product-list { list-style: none; padding: 0 20px; max-width: 900px; }
+        .product-item { background: white; margin-bottom: 10px; padding: 25px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 8px rgba(0,0,0,0.08); font-size: 1.1em; }
+        .product-actions button { background: none; border: none; cursor: pointer; font-size: 28px; margin-left: 15px; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .modal { background: white; padding: 20px; border-radius: 8px; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .modal input { width: 90%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="franja franja-superior"></div>
+
+<div id="login-screen" class="active">
+    <div class="login-container">
+        <h2>Iniciar Sesión</h2>
+        <input type="text" id="username" placeholder="Usuario">
+        <input type="password" id="password" placeholder="Contraseña">
+        <button onclick="login()">Ingresar</button>
+        <p id="login-error" style="color: red; display: none; font-size: 14px;">Credenciales incorrectas.</p>
+    </div>
+</div>
+
+<div id="app-screen">
+    <div class="header">
+        <h2>Gestión de Inventario</h2>
+        <label>Productos Disponibles</label><br>
+        <button class="btn-pastel" onclick="abrirModal('add')">Añadir</button>
+    </div>
+    <ul class="product-list" id="product-list"></ul>
+</div>
+
+<div class="franja franja-inferior"></div>
+
+<div class="modal-overlay" id="product-modal">
+    <div class="modal">
+        <h2 id="modal-title">Añadir Producto</h2>
+        <input type="text" id="prod-id" disabled placeholder="ID (Autogenerado)">
+        <input type="text" id="prod-name" placeholder="Nombre del producto">
+        <input type="number" id="prod-price" placeholder="Precio">
+        <input type="number" id="prod-stock" placeholder="Stock">
+        <div class="modal-actions">
+            <button onclick="cerrarModal('product-modal')">Cancelar</button>
+            <button onclick="guardarProducto()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+        <h2>Confirmar Eliminación</h2>
+        <p>¿Estás seguro de que deseas eliminar este producto?</p>
+        <div class="modal-actions">
+            <button onclick="cerrarModal('delete-modal')">Cancelar</button>
+            <button onclick="confirmarEliminar()" style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 4px;">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- API URL Base
+const API_URL = '/api/productos';
+
+// --- Estado de la App
+let productos = [];
+let modalMode = 'add';
+let currentProductId = null;
+
+// --- Login
+function login() {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+
+    if (user === 'Admin' && pass === 'Admin') {
+        document.getElementById('login-screen').classList.remove('active');
+        document.getElementById('app-screen').classList.add('active');
+        cargarProductos();
+    } else {
+        document.getElementById('login-error').style.display = 'block';
+    }
+}
+
+// --- Peticiones al Servidor
+async function cargarProductos() {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            throw new Error(`Error del servidor: ${response.status}`);
+        }
+        productos = await response.json();
+        renderizarLista();
+    } catch (error) {
+        console.error("Error al cargar productos:", error);
+        alert("Fallo la conexión. Revisa la consola para más detalles.");
+    }
+}
+
+async function guardarProducto() {
+    const nombre = document.getElementById('prod-name').value;
+    const precio = document.getElementById('prod-price').value;
+    const stock = document.getElementById('prod-stock').value;
+
+    if(!nombre || !precio || !stock) {
+        alert("Por favor completa todos los campos.");
+        return;
+    }
+
+    const payload = { nombre, precio: parseFloat(precio), stock: parseInt(stock) };
+
+    try {
+        if (modalMode === 'add') {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: {'Content-Type': 'application/json'}
+            });
+            if (!response.ok) throw new Error("Fallo al guardar");
+        } else {
+            const response = await fetch(`${API_URL}/${currentProductId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload),
+                headers: {'Content-Type': 'application/json'}
+            });
+            if (!response.ok) throw new Error("Fallo al actualizar");
+        }
+
+        cerrarModal('product-modal');
+        await cargarProductos();
+    } catch (error) {
+        console.error("Error al guardar el producto", error);
+        alert("Hubo un problema al guardar el producto.");
+    }
+}
+
+function prepararEliminar(id) {
+    currentProductId = id;
+    document.getElementById('delete-modal').style.display = 'flex';
+}
+
+async function confirmarEliminar() {
+    try {
+        await fetch(`${API_URL}/${currentProductId}`, {
+            method: 'DELETE'
+        });
+
+        cerrarModal('delete-modal');
+        await cargarProductos();
+    } catch (error) {
+        console.error("Error al eliminar producto", error);
+        alert("Error al intentar eliminar el producto de la base de datos.");
+    }
+}
+
+// --- Renderizado
+function renderizarLista() {
+    const listElement = document.getElementById('product-list');
+    listElement.innerHTML = '';
+    productos.forEach(p => listElement.appendChild(crearElementoProducto(p)));
+}
+
+function crearElementoProducto(producto) {
+    const li = document.createElement('li');
+    li.className = 'product-item';
+    li.innerHTML = `
+        <div>
+            <strong>${producto.nombre}</strong> (ID: ${producto.id})<br>
+            <small>Precio: $${producto.precio} | Stock: ${producto.stock}</small>
+        </div>
+        <div class="product-actions">
+            <button onclick="abrirModal('edit', '${producto.id}')" title="Editar">✏️</button>
+            <button onclick="prepararEliminar('${producto.id}')" title="Eliminar">🗑️</button>
+        </div>`;
+    return li;
+}
+
+// --- Manejo de Modales
+function abrirModal(mode, id = null) {
+    modalMode = mode;
+    currentProductId = id;
+    document.getElementById('product-modal').style.display = 'flex';
+
+    const inputId = document.getElementById('prod-id');
+
+    if (mode === 'add') {
+        document.getElementById('modal-title').innerText = 'Añadir Producto';
+        inputId.style.display = 'none';
+        inputId.value = '';
+        document.getElementById('prod-name').value = '';
+        document.getElementById('prod-price').value = '';
+        document.getElementById('prod-stock').value = '';
+    } else {
+        document.getElementById('modal-title').innerText = 'Edición de producto';
+        inputId.style.display = 'block';
+        const producto = productos.find(p => p.id == id);
+        if(producto) {
+            inputId.value = producto.id;
+            document.getElementById('prod-name').value = producto.nombre;
+            document.getElementById('prod-price').value = producto.precio;
+            document.getElementById('prod-stock').value = producto.stock;
+        }
+    }
+}
+
+function cerrarModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+</script>
+</body>
+</html>
+
