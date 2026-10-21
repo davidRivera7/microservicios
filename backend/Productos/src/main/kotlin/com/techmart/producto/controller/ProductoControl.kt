@@ -28,6 +28,13 @@ class ProductoControl(private val repository: ProductoRepo) {
         }
     }
 
+    // Consulta de todos los productos para el front
+    @GetMapping
+    fun obtenerTodosLosProductos(): ResponseEntity<List<Producto>> {
+        val productos = repository.findAll()
+        return ResponseEntity(productos, HttpStatus.OK)
+    }
+
     // Modificación
     @PutMapping("/{id}")
     fun actualizarProducto(
@@ -80,12 +87,5 @@ class ProductoControl(private val repository: ProductoRepo) {
         repository.save(producto)
 
         return ResponseEntity.ok(producto)
-    }
-
-    // Consulta de todos los productos 
-    @GetMapping
-    fun obtenerTodosLosProductos(): ResponseEntity<List<Producto>> {
-        val productos = repository.findAll()
-        return ResponseEntity(productos, HttpStatus.OK)
     }
 }
