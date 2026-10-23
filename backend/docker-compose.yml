@@ -58,7 +58,7 @@ services:
         container_name: api_productos
         restart: on-failure
         ports:
-            - "8081:8080"
+            - "8081:8081"
         environment:
             - DB_URL=jdbc:mysql://db-productos:3306/bd_productos?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
             - DB_USER=root
@@ -92,8 +92,6 @@ services:
             RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: '-rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json"'
         volumes:
             - ./definitions.json:/etc/rabbitmq/definitions.json
-        networks:
-            - red-pedidos
 
     servicio-pedidos:
         build: ./servicio-pedidos
@@ -146,12 +144,6 @@ services:
             - rabbitmq
         environment:
             SPRING_RABBITMQ_HOST: rabbitmq
-        networks:
-            - red-pedidos
-
-networks:
-    red-pedidos:
-        driver: bridge
 
 volumes:
     sqlserver_data:

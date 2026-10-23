@@ -16,6 +16,7 @@ type EventoPedidoCreado struct {
 	EmailCliente  string  `json:"email_cliente"`
 	NombreCliente string  `json:"nombre_cliente"`
 	ProductoID    string  `json:"producto_id"`
+	NombreProducto string  `json:"nombre_producto"` //Agregue este campo
 	Cantidad      int     `json:"cantidad"`
 	Total         float64 `json:"total"`
 }

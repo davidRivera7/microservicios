@@ -4,7 +4,7 @@ COPY build.gradle.kts settings.gradle.kts ./
 COPY src ./src
 RUN gradle clean build -x test
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar api-productos.jar
 

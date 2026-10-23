@@ -24,6 +24,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("PermitirTodo"); //Agregue esta parte
+
 app.UseAuthorization();
 
 app.MapControllers();

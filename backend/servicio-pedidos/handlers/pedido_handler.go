@@ -136,44 +136,34 @@ func ObtenerPedidosHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Unimos la tabla pedidos con la tabla clientes
+    // Consultar todos los pedidos desde PostgreSQL
     querySelect := `
-        SELECT 
-            p.id, 
-            p.cliente_id, 
-            p.nombre_cliente, 
-            COALESCE(c.email, '') AS email_cliente, 
-            p.producto_id, 
-            p.nombre_prod, 
-            p.cantidad, 
-            p.precio_total
-        FROM pedidos p
-        LEFT JOIN clientes c ON p.cliente_id = c.id
+        SELECT id, cliente_id, nombre_cliente, producto_id, nombre_prod, cantidad, precio_total, fecha 
+        FROM pedidos
     `
     rows, err := db.DB.Query(querySelect)
     if err != nil {
-        log.Println("Error SQL en ObtenerPedidosHandler:", err)
-        http.Error(w, "Error al consultar pedidos", http.StatusInternalServerError)
-        return
+        log.Println("Error SQL en ObtenerPedidosHandler:", err) 
+        http.Error(w, "Error al consultar los pedidos de la base de datos", http.StatusInternalServerError)
+        return        
     }
     defer rows.Close()
 
-    pedidosList := make([]models.PedidoNotificacion, 0)
+    pedidosList := make([]models.Pedido, 0)
 
     for rows.Next() {
-        var p models.PedidoNotificacion
+        var p models.Pedido
         err := rows.Scan(
-            &p.ID,
-            &p.ClienteID,
-            &p.NombreCliente,
-            &p.EmailCliente,
-            &p.ProductoID,
-            &p.NombreProd,
-            &p.Cantidad,
-            &p.PrecioTotal,
+            &p.ID, 
+            &p.ClienteID, 
+            &p.NombreCliente, 
+            &p.ProductoID, 
+            &p.NombreProd, 
+            &p.Cantidad, 
+            &p.PrecioTotal, 
+            &p.Fecha,
         )
         if err != nil {
-            log.Println("Error al escanear fila:", err)
             continue
         }
         pedidosList = append(pedidosList, p)
@@ -291,40 +281,52 @@ func ProcesarPedidoRabbitHandler(w http.ResponseWriter, r *http.Request) {
 
 
 // METODO ELIMINADO DE DAVID
+
+
 // func ObtenerPedidosHandler(w http.ResponseWriter, r *http.Request) {
 //     if r.Method != http.MethodGet {
 //         http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 //         return
 //     }
 
-//     // Consultar todos los pedidos desde PostgreSQL
+//     // Unimos la tabla pedidos con la tabla clientes
 //     querySelect := `
-//         SELECT id, cliente_id, nombre_cliente, producto_id, nombre_prod, cantidad, precio_total, fecha 
-//         FROM pedidos
+//         SELECT 
+//             p.id, 
+//             p.cliente_id, 
+//             p.nombre_cliente, 
+//             COALESCE(c.email, '') AS email_cliente, 
+//             p.producto_id, 
+//             p.nombre_prod, 
+//             p.cantidad, 
+//             p.precio_total
+//         FROM pedidos p
+//         LEFT JOIN clientes c ON p.cliente_id = c.id
 //     `
 //     rows, err := db.DB.Query(querySelect)
 //     if err != nil {
-//         log.Println("Error SQL en ObtenerPedidosHandler:", err) 
-//         http.Error(w, "Error al consultar los pedidos de la base de datos", http.StatusInternalServerError)
-//         return        
+//         log.Println("Error SQL en ObtenerPedidosHandler:", err)
+//         http.Error(w, "Error al consultar pedidos", http.StatusInternalServerError)
+//         return
 //     }
 //     defer rows.Close()
 
-//     pedidosList := make([]models.Pedido, 0)
+//     pedidosList := make([]models.PedidoNotificacion, 0)
 
 //     for rows.Next() {
-//         var p models.Pedido
+//         var p models.PedidoNotificacion
 //         err := rows.Scan(
-//             &p.ID, 
-//             &p.ClienteID, 
-//             &p.NombreCliente, 
-//             &p.ProductoID, 
-//             &p.NombreProd, 
-//             &p.Cantidad, 
-//             &p.PrecioTotal, 
-//             &p.Fecha,
+//             &p.ID,
+//             &p.ClienteID,
+//             &p.NombreCliente,
+//             &p.EmailCliente,
+//             &p.ProductoID,
+//             &p.NombreProd,
+//             &p.Cantidad,
+//             &p.PrecioTotal,
 //         )
 //         if err != nil {
+//             log.Println("Error al escanear fila:", err)
 //             continue
 //         }
 //         pedidosList = append(pedidosList, p)

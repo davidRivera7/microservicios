@@ -36,6 +36,10 @@ public class PedidoDTO {
     @JsonProperty("total")
     private double total;
 
+    // Mapea "nombre_producto" del JSON al campo nombreProducto
+    @JsonProperty("nombre_producto")
+    private String nombreProducto;
+
     // --- MÉTODOS GETTER (Solo lectura) ---
 
     // Retorna el ID único del pedido
@@ -71,5 +75,10 @@ public class PedidoDTO {
     // Retorna el importe total del pedido
     public double getTotal() { 
         return total; 
+    }
+
+    // Retorna el nombre del producto comprado
+    public String getNombreProducto() {
+        return nombreProducto;
     }
 }

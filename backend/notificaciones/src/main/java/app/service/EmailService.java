@@ -39,18 +39,18 @@ public class EmailService {
 
         String cuerpo = String.format(
                 "Hola %s,\n\n" +
-                        "¡Tu pedido #%d ha sido recibido con éxito!\n\n" +
-                        "Detalles:\n" +
-                        "- Producto: %s\n" +
-                        "- Cantidad: %d\n" +
-                        "- Total: $%.2f\n\n" +
-                        "Gracias por tu compra.",
+                "¡Tu pedido ha sido recibido con éxito!\n\n" +
+                "Detalles de tu pedido:\n" +
+                "- Producto: %s\n" +
+                "- Cantidad: %d\n" +
+                "- Total: $%.2f\n\n" +
+                "Gracias por tu compra.",
                 pedido.getNombreCliente(),
-                pedido.getPedidoId(),
-                pedido.getProductoId(),
+                pedido.getNombreProducto(),
                 pedido.getCantidad(),
-                pedido.getTotal());
-
+                pedido.getTotal()
+        );
+        
         // 3. Envío real a través de JavaMailSender
         try {
             if (mailSender != null) {
