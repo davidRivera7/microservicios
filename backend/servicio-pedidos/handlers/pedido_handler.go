@@ -1,16 +1,16 @@
 package handlers
 
 import (
-    "encoding/json"
-    "fmt"
-    "net/http"
-    "os"
-    "time"
-    "log"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
 
-    "servicio-pedidos/db"     
-	"servicio-pedidos/messaging" 
-    "servicio-pedidos/models"
+	"servicio-pedidos/db"
+	"servicio-pedidos/messaging"
+	"servicio-pedidos/models"
 )
 
 func CrearPedidoHandler(w http.ResponseWriter, r *http.Request) {
@@ -280,58 +280,3 @@ func ProcesarPedidoRabbitHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// METODO ELIMINADO DE DAVID
-
-
-// func ObtenerPedidosHandler(w http.ResponseWriter, r *http.Request) {
-//     if r.Method != http.MethodGet {
-//         http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
-//         return
-//     }
-
-//     // Unimos la tabla pedidos con la tabla clientes
-//     querySelect := `
-//         SELECT 
-//             p.id, 
-//             p.cliente_id, 
-//             p.nombre_cliente, 
-//             COALESCE(c.email, '') AS email_cliente, 
-//             p.producto_id, 
-//             p.nombre_prod, 
-//             p.cantidad, 
-//             p.precio_total
-//         FROM pedidos p
-//         LEFT JOIN clientes c ON p.cliente_id = c.id
-//     `
-//     rows, err := db.DB.Query(querySelect)
-//     if err != nil {
-//         log.Println("Error SQL en ObtenerPedidosHandler:", err)
-//         http.Error(w, "Error al consultar pedidos", http.StatusInternalServerError)
-//         return
-//     }
-//     defer rows.Close()
-
-//     pedidosList := make([]models.PedidoNotificacion, 0)
-
-//     for rows.Next() {
-//         var p models.PedidoNotificacion
-//         err := rows.Scan(
-//             &p.ID,
-//             &p.ClienteID,
-//             &p.NombreCliente,
-//             &p.EmailCliente,
-//             &p.ProductoID,
-//             &p.NombreProd,
-//             &p.Cantidad,
-//             &p.PrecioTotal,
-//         )
-//         if err != nil {
-//             log.Println("Error al escanear fila:", err)
-//             continue
-//         }
-//         pedidosList = append(pedidosList, p)
-//     }
-
-//     w.Header().Set("Content-Type", "application/json")
-//     json.NewEncoder(w).Encode(pedidosList)
-// }
