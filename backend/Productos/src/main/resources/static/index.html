@@ -91,15 +91,27 @@ let modalMode = 'add';
 let currentProductId = null;
 
 // --- Login
-function login() {
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
+async function login() {
+    const usuario = document.getElementById('username').value;
+    const contrasena = document.getElementById('password').value;
 
-    if (user === 'Admin' && pass === 'Admin') {
-        document.getElementById('login-screen').classList.remove('active');
-        document.getElementById('app-screen').classList.add('active');
-        cargarProductos();
-    } else {
+    try {
+        const response = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, contrasena })
+        });
+
+        if (response.ok) {
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('app-screen').classList.add('active');
+            document.getElementById('login-error').style.display = 'none';
+            cargarProductos();
+        } else {
+            document.getElementById('login-error').style.display = 'block';
+        }
+    } catch (error) {
+        console.error("Error en la autenticación:", error);
         document.getElementById('login-error').style.display = 'block';
     }
 }

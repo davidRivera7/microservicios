@@ -11,7 +11,7 @@ COPY gradle gradle
 COPY build.gradle settings.gradle ./
 
 # Otorgar permisos de ejecucion al wrapper de Gradle
-RUN chmod +x gradlew
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 
 # Copiar el codigo fuente de la aplicacion
 COPY src src
