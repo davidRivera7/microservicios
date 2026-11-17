@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", cargarPedidos);
 async function cargarPedidos() {
     try {
         // Consultar la API de Go para obtener todos los pedidos
-        const respuesta = await fetch("http://localhost:8082/pedidos");
+        const respuesta = await fetch("/api/pedidos");
 
         // Si el servidor responde con un error HTTP, lo reportamos.
         if (!respuesta.ok) {
@@ -109,7 +109,7 @@ async function atenderPedido(pedido, filaHTML) {
         // Consultar la API de clientes usando el ID del pedido.
         // El endpoint recibe el ID del cliente al final de la URL.
         const respuestaCliente = await fetch(
-            `http://localhost:8083/api/Clientes/ObtenerPorID/${encodeURIComponent(pedido.cliente_id)}`,
+            `/api/Clientes/ObtenerPorID/${encodeURIComponent(pedido.cliente_id)}`,
         );
 
         // Si la consulta falla, detenemos el proceso.
@@ -156,7 +156,7 @@ async function atenderPedido(pedido, filaHTML) {
 
         // Enviamos el objeto JSON al endpoint /pedidos usando DELETE.
         // El backend de Go debe recibirlo y publicarlo en RabbitMQ.
-        const respuesta = await fetch("/pedidos", {
+        const respuesta = await fetch("/api/pedidos", {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
