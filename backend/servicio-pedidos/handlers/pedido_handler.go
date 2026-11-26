@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"servicio-pedidos/db"
@@ -29,7 +31,14 @@ func CrearPedidoHandler(w http.ResponseWriter, r *http.Request) {
 	// Obtener URLs de los servicios desde variables de entorno (con valores por defecto)
 	urlClientes := obtenerEnv("CLIENTES_SERVICE_URL", "http://localhost:8083/api")
 	urlProductos := obtenerEnv("PRODUCTOS_SERVICE_URL", "http://localhost:8081/api")
+	urlProductos = strings.Replace(urlProductos, "http://", "https://", 1)
     
+	clientSSL := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
 	// 1. Validar Cliente en Servicio de Clientes	
     // 1. Validar Cliente en Servicio de Clientes
 	urlClienteFinal := fmt.Sprintf("%s/clientes/ObtenerPorID/%s", urlClientes, req.ClienteID)    
@@ -46,8 +55,9 @@ func CrearPedidoHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(respCliente.Body).Decode(&cliente)
 
 	// 2. Validar Producto y Precio en Servicio de Productos
-	respProd, err := http.Get(fmt.Sprintf("%s/productos/%s", urlProductos, req.ProductoID))
+	respProd, err := clientSSL.Get(fmt.Sprintf("%s/productos/%s", urlProductos, req.ProductoID))
 	if err != nil || respProd.StatusCode != http.StatusOK {
+		log.Printf("Error consultando producto: %v\n", err)
 		http.Error(w, "El producto especificado no existe o no responde", http.StatusNotFound)
 		return
 	}
@@ -65,10 +75,10 @@ func CrearPedidoHandler(w http.ResponseWriter, r *http.Request) {
 	urlDescuento := fmt.Sprintf("%s/productos/%s/descontar-stock?cantidad=%d", urlProductos, req.ProductoID, req.Cantidad)
 	reqUpdate, _ := http.NewRequest(http.MethodPut, urlDescuento, nil)
 
-	client := &http.Client{}
-	respUpdate, err := client.Do(reqUpdate)
+	respUpdate, err := clientSSL.Do(reqUpdate)
 
 	if err != nil || respUpdate.StatusCode != http.StatusOK {
+		log.Printf("Error descontando stock: %v\n", err)
 		http.Error(w, "No se pudo actualizar el stock del producto", http.StatusInternalServerError)
 		return
 	}
@@ -278,5 +288,3 @@ func ProcesarPedidoRabbitHandler(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
     w.Write([]byte(`{"mensaje": "Pedido atendido, enviado a RabbitMQ y borrado de la BD"}`))
 }
-
-

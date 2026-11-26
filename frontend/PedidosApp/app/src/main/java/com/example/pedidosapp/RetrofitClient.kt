@@ -11,7 +11,7 @@ import javax.net.ssl.X509TrustManager
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://192.168.1.81/"
+    private const val BASE_URL = "https://10.130.141.51/"
 
     // puente para confiar en el certificado local y no bloquee la conexion
     private val unsafeOkHttpClient: OkHttpClient by lazy {
