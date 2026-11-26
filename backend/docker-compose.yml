@@ -63,6 +63,8 @@ services:
             - DB_URL=jdbc:mysql://db-productos:3306/bd_productos?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
             - DB_USER=root
             - DB_PASS=root
+        volumes:
+            - ../frontend/Productos:/app/static
         depends_on:
             - db-productos
 
